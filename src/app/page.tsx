@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getSocket } from "@/lib/socket/client";
 import { PlayersTable } from "@/components/PlayersTable";
+import { HighlightedSentence } from "@/components/HighlightedSentence";
 
 type Player = {
   id: string;
@@ -127,7 +128,13 @@ export default function HomePage() {
       {error && <div className="text-red-600">{error}</div>}
       <div className="border rounded p-3">
         <div className="font-semibold mb-2">Current sentence</div>
-        <div className="mb-2">{sentence || "—"}</div>
+        <div className="mb-2">
+          {sentence ? (
+            <HighlightedSentence sentence={sentence} typed={typed} />
+          ) : (
+            "—"
+          )}
+        </div>
         <div className="text-sm opacity-80">Time left: {timeLeft}s</div>
       </div>
       {isJoined && (
@@ -136,6 +143,7 @@ export default function HomePage() {
           value={typed}
           onChange={(e) => handleTyping(e.target.value)}
           placeholder="Start typing..."
+          disabled={timeLeft === 0}
         />
       )}
 
