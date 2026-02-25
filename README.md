@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+🏎️ Typerace (Realtime Writing Competition)
 
-## Getting Started
+A real-time multiplayer typing competition platform built with Next.js + Socket.IO + TanStack Table + Prisma (ready for persistence).
 
-First, run the development server:
+👉 Live Demo:
+https://typeracer-test.vercel.app/
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+⚠️ The Socket server is deployed on Render (free tier).
+Due to free instance sleep policy, the first connection may take up to 30–60 seconds to wake up.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+✨ Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Real-time multiplayer typing (Socket.IO)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Fixed-time rounds with automatic sentence rotation
 
-## Learn More
+Live progress per player
 
-To learn more about Next.js, take a look at the following resources:
+Words Per Minute (WPM) calculation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Accuracy calculation (percentage, rounded)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Sorted & paginated results table (TanStack Table)
 
-## Deploy on Vercel
+URL-synced sorting and pagination
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Client-side sentence highlighting (correct/incorrect chars)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Unit tests for typing metrics (Vitest)
+
+Production-ready environment configuration
+
+🏗️ Architecture
+Frontend
+
+Next.js (App Router)
+
+TanStack Table (sorting + pagination)
+
+TailwindCSS
+
+Socket.IO client
+
+Deployed on Vercel
+
+Backend (Realtime)
+
+Node.js + Socket.IO
+
+In-memory game state (room-based)
+
+Per-room interval loop for rounds
+
+Server-side WPM & Accuracy calculation
+
+Deployed on Render
+
+🔌 Deployment Architecture
+
+Vercel does not support long-lived WebSocket servers.
+Therefore the architecture is split:
+
+[Vercel - Next.js Frontend]
+          │
+          ▼
+[Render - Socket.IO Server]
+
+Environment variables:
+
+Vercel
+NEXT_PUBLIC_SOCKET_URL=https://your-render-service.onrender.com
+Render
+CLIENT_ORIGIN=https://typeracer-test.vercel.app
+PORT (provided automatically by Render)
+🧮 Metrics Calculation
+Accuracy
+correctChars / totalTypedChars
+
+Returns 0% if no characters typed
+
+Displayed as rounded percentage
+
+WPM
+correctWords / elapsedMinutes
+
+Only fully correct words count
+
+Stops counting at first incorrect word
+
+Rounded in UI
+
+Unit-tested using Vitest.
+🧠 Design Decisions
+
+Server-authoritative metrics (cannot cheat from client)
+
+Per-room interval instead of recursive timeouts (stable round timer)
+
+URL-synced table state (refresh-safe sorting)
+
+Client-side text highlighting for UX clarity
+
+Unit tests for core logic
+
+Environment-based config for production readiness
+
+🚀 Future Improvements
+
+Persistent player statistics (Postgres via Prisma)
+
+Leaderboard history
+
+E2E tests (Playwright)
+
+Rate limiting & room scaling
+
+Redis adapter for horizontal scaling
