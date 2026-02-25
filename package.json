@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "dev:socket": "tsx watch src/server/socket-server.ts"
+    "dev:socket": "tsx watch src/server/socket-server.ts",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@prisma/client": "^7.4.1",
