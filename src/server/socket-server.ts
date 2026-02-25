@@ -30,6 +30,7 @@ io.on("connection", (socket) => {
     const { name, roomId } = parsed.data;
 
     socket.join(roomId);
+    socket.data.roomId = roomId;
     gameState.join(roomId, {
       id: socket.id,
       name,
@@ -42,8 +43,7 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("disconnect", () => {
-    // socket.rooms содержит socket.id и комнаты, в которых он был
+  socket.on("disconnecting", () => {
     for (const roomId of socket.rooms) {
       if (roomId === socket.id) continue;
       gameState.leave(roomId, socket.id);
@@ -51,6 +51,17 @@ io.on("connection", (socket) => {
         players: gameState.getPlayers(roomId),
       });
     }
+  });
+  socket.on("player:leave", () => {
+    const roomId = socket.data.roomId as string | undefined;
+    if (!roomId) return;
+
+    socket.leave(roomId);
+    gameState.leave(roomId, socket.id);
+
+    io.to(roomId).emit("players:update", {
+      players: gameState.getPlayers(roomId),
+    });
   });
 });
 
