@@ -39,7 +39,7 @@ function emitRound(roomId: string) {
 
   for (const p of gameState.getPlayers(roomId)) {
     gameState.updateTyped(roomId, p.id, "");
-    gameState.updateStats(roomId, p.id, { wpm: 0, accuracy: 1 });
+    gameState.updateStats(roomId, p.id, { wpm: 0, accuracy: 0 });
   }
 
   io.to(roomId).emit("round:start", round);
@@ -85,7 +85,7 @@ io.on("connection", (socket) => {
       joinedAt: Date.now(),
       typed: "",
       wpm: 0,
-      accuracy: 1,
+      accuracy: 0,
     });
 
     ensureRoomLoop(roomId);

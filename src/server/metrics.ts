@@ -12,7 +12,7 @@ export function computeMetrics(params: {
   for (let i = 0; i < limit; i++) {
     if (typed[i] === sentence[i]) correctChars++;
   }
-  const accuracy = totalTyped === 0 ? 1 : correctChars / totalTyped;
+  const accuracy = totalTyped === 0 ? 0 : correctChars / totalTyped;
 
   const sentenceWords = sentence.trim().split(/\s+/);
   const typedWords = typed.trim().split(/\s+/);
