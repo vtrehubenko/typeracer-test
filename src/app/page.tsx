@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getSocket } from "@/lib/socket/client";
+import { PlayersTable } from "@/components/PlayersTable";
 
 type Player = {
   id: string;
@@ -144,20 +145,14 @@ export default function HomePage() {
           <div className="text-sm opacity-70">No players yet</div>
         ) : (
           <ul className="list-disc pl-5">
-            {players.map((p) => (
-              <li key={p.id}>
-                <div className="flex justify-between gap-4">
-                  <div>
-                    <div>{p.name}</div>
-                    <div className="text-sm opacity-70">{p.typed}</div>
-                  </div>
-                  <div className="text-sm text-right whitespace-nowrap">
-                    <div>WPM: {Math.round(p.wpm)}</div>
-                    <div>Acc: {p.accuracy.toFixed(2)}</div>
-                  </div>
-                </div>
-              </li>
-            ))}
+            <PlayersTable
+              data={players.map((p) => ({
+                name: p.name,
+                typed: p.typed,
+                wpm: p.wpm,
+                accuracy: p.accuracy,
+              }))}
+            />
           </ul>
         )}
       </div>
