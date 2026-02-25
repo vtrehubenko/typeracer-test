@@ -9,6 +9,8 @@ type Player = {
   roomId: string;
   joinedAt: number;
   typed: string;
+  wpm: number;
+  accuracy: number;
 };
 
 export default function HomePage() {
@@ -20,13 +22,14 @@ export default function HomePage() {
   const [connected, setConnected] = useState(false);
   const [sentence, setSentence] = useState("");
   const [endsAt, setEndsAt] = useState<number | null>(null);
-  const [timeLeft, setTimeLeft] = useState(0);
   const [typed, setTyped] = useState("");
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     const onRoundStart = (round: { sentence: string; endsAt: number }) => {
       setSentence(round.sentence);
       setEndsAt(round.endsAt);
+      setTyped("");
     };
     const s = getSocket();
 
@@ -56,17 +59,10 @@ export default function HomePage() {
       s.off("round:start", onRoundStart);
     };
   }, []);
-
   useEffect(() => {
-    if (!endsAt) return;
-
-    const t = setInterval(() => {
-      const diff = endsAt - Date.now();
-      setTimeLeft(Math.max(0, Math.ceil(diff / 1000)));
-    }, 200);
-
+    const t = setInterval(() => setNow(Date.now()), 200);
     return () => clearInterval(t);
-  }, [endsAt]);
+  }, []);
 
   const join = () => {
     setError(null);
@@ -87,6 +83,7 @@ export default function HomePage() {
       s.emit("player:progress", { typed: value });
     }
   };
+  const timeLeft = endsAt ? Math.max(0, Math.ceil((endsAt - now) / 1000)) : 0;
 
   return (
     <main className="p-6 space-y-4">
@@ -150,10 +147,14 @@ export default function HomePage() {
             {players.map((p) => (
               <li key={p.id}>
                 <div className="flex justify-between gap-4">
-                  <span>{p.name}</span>
-                  <span className="text-sm opacity-70">
-                    {p.typed.slice(0, 70)}
-                  </span>
+                  <div>
+                    <div>{p.name}</div>
+                    <div className="text-sm opacity-70">{p.typed}</div>
+                  </div>
+                  <div className="text-sm text-right whitespace-nowrap">
+                    <div>WPM: {Math.round(p.wpm)}</div>
+                    <div>Acc: {p.accuracy.toFixed(2)}</div>
+                  </div>
                 </div>
               </li>
             ))}

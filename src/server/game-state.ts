@@ -4,11 +4,14 @@ export type PlayerSession = {
   roomId: string;
   joinedAt: number;
   typed: string;
+  wpm: number;
+  accuracy: number;
 };
 
 export type RoundState = {
   id: string;
   sentence: string;
+  startedAt: number;
   endsAt: number;
 };
 
@@ -61,6 +64,18 @@ class GameState {
     const p = room.players.get(socketId);
     if (!p) return;
     p.typed = typed;
+  }
+  updateStats(
+    roomId: string,
+    socketId: string,
+    stats: { wpm: number; accuracy: number },
+  ) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const p = room.players.get(socketId);
+    if (!p) return;
+    p.wpm = stats.wpm;
+    p.accuracy = stats.accuracy;
   }
 }
 

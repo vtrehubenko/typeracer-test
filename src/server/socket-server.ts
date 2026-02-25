@@ -2,9 +2,9 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { z } from "zod";
 import { randomUUID } from "crypto";
-
 import { gameState } from "./game-state";
 import { getRandomSentence } from "./sentences";
+import { computeMetrics } from "./metrics";
 
 const PORT = Number(process.env.SOCKET_PORT ?? 3001);
 
@@ -23,27 +23,46 @@ const io = new Server(httpServer, {
 });
 
 const ROUND_MS = 30_000;
+const startedAt = Date.now();
+const roomLoops = new Map<string, NodeJS.Timeout>();
 
-function startRound(roomId: string) {
+function emitRound(roomId: string) {
+  const startedAt = Date.now();
   const round = {
     id: randomUUID(),
     sentence: getRandomSentence(),
-    endsAt: Date.now() + ROUND_MS,
+    startedAt,
+    endsAt: startedAt + ROUND_MS,
   };
 
   gameState.setRound(roomId, round);
 
-  // reset typed for all players
   for (const p of gameState.getPlayers(roomId)) {
     gameState.updateTyped(roomId, p.id, "");
+    gameState.updateStats(roomId, p.id, { wpm: 0, accuracy: 1 });
   }
 
   io.to(roomId).emit("round:start", round);
   io.to(roomId).emit("players:update", {
     players: gameState.getPlayers(roomId),
   });
+}
 
-  setTimeout(() => startRound(roomId), ROUND_MS);
+function ensureRoomLoop(roomId: string) {
+  if (roomLoops.has(roomId)) return;
+
+  emitRound(roomId);
+
+  const t = setInterval(() => {
+    if (gameState.getPlayers(roomId).length === 0) {
+      clearInterval(t);
+      roomLoops.delete(roomId);
+      return;
+    }
+    emitRound(roomId);
+  }, ROUND_MS);
+
+  roomLoops.set(roomId, t);
 }
 
 io.on("connection", (socket) => {
@@ -65,14 +84,14 @@ io.on("connection", (socket) => {
       roomId,
       joinedAt: Date.now(),
       typed: "",
+      wpm: 0,
+      accuracy: 1,
     });
 
+    ensureRoomLoop(roomId);
+
     const existingRound = gameState.getRound(roomId);
-    if (!existingRound) {
-      startRound(roomId);
-    } else {
-      socket.emit("round:start", existingRound);
-    }
+    if (existingRound) socket.emit("round:start", existingRound);
 
     io.to(roomId).emit("players:update", {
       players: gameState.getPlayers(roomId),
@@ -85,6 +104,11 @@ io.on("connection", (socket) => {
 
     socket.leave(roomId);
     gameState.leave(roomId, socket.id);
+    if (gameState.getPlayers(roomId).length === 0) {
+      const t = roomLoops.get(roomId);
+      if (t) clearInterval(t);
+      roomLoops.delete(roomId);
+    }
 
     io.to(roomId).emit("players:update", {
       players: gameState.getPlayers(roomId),
@@ -94,7 +118,21 @@ io.on("connection", (socket) => {
     const roomId = socket.data.roomId as string | undefined;
     if (!roomId) return;
 
-    gameState.updateTyped(roomId, socket.id, payload.typed);
+    const round = gameState.getRound(roomId);
+    if (!round) return;
+
+    const typed = typeof payload?.typed === "string" ? payload.typed : "";
+
+    gameState.updateTyped(roomId, socket.id, typed);
+
+    const stats = computeMetrics({
+      sentence: round.sentence,
+      typed,
+      startedAt: round.startedAt,
+      now: Date.now(),
+    });
+
+    gameState.updateStats(roomId, socket.id, stats);
 
     io.to(roomId).emit("players:update", {
       players: gameState.getPlayers(roomId),
