@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { getSocket } from "@/lib/socket/client";
 
-type Player = { id: string; name: string; roomId: string; joinedAt: number };
+type Player = {
+  id: string;
+  name: string;
+  roomId: string;
+  joinedAt: number;
+  typed: string;
+};
 
 export default function HomePage() {
   const [name, setName] = useState("super typer");
@@ -15,6 +21,7 @@ export default function HomePage() {
   const [sentence, setSentence] = useState("");
   const [endsAt, setEndsAt] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [typed, setTyped] = useState("");
 
   useEffect(() => {
     const onRoundStart = (round: { sentence: string; endsAt: number }) => {
@@ -72,6 +79,14 @@ export default function HomePage() {
     setPlayers([]);
     setIsJoined(false);
   };
+  const handleTyping = (value: string) => {
+    setTyped(value);
+
+    const s = getSocket();
+    if (s.connected) {
+      s.emit("player:progress", { typed: value });
+    }
+  };
 
   return (
     <main className="p-6 space-y-4">
@@ -117,6 +132,14 @@ export default function HomePage() {
         <div className="mb-2">{sentence || "—"}</div>
         <div className="text-sm opacity-80">Time left: {timeLeft}s</div>
       </div>
+      {isJoined && (
+        <input
+          className="border rounded px-3 py-2 w-full mt-3"
+          value={typed}
+          onChange={(e) => handleTyping(e.target.value)}
+          placeholder="Start typing..."
+        />
+      )}
 
       <div className="border rounded p-3">
         <div className="font-semibold mb-2">Players in room</div>
@@ -125,7 +148,14 @@ export default function HomePage() {
         ) : (
           <ul className="list-disc pl-5">
             {players.map((p) => (
-              <li key={p.id}>{p.name}</li>
+              <li key={p.id}>
+                <div className="flex justify-between gap-4">
+                  <span>{p.name}</span>
+                  <span className="text-sm opacity-70">
+                    {p.typed.slice(0, 70)}
+                  </span>
+                </div>
+              </li>
             ))}
           </ul>
         )}

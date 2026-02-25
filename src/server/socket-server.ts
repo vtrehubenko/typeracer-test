@@ -90,6 +90,16 @@ io.on("connection", (socket) => {
       players: gameState.getPlayers(roomId),
     });
   });
+  socket.on("player:progress", (payload: { typed: string }) => {
+    const roomId = socket.data.roomId as string | undefined;
+    if (!roomId) return;
+
+    gameState.updateTyped(roomId, socket.id, payload.typed);
+
+    io.to(roomId).emit("players:update", {
+      players: gameState.getPlayers(roomId),
+    });
+  });
 
   socket.on("disconnecting", () => {
     for (const roomId of socket.rooms) {
