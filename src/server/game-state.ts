@@ -1,8 +1,15 @@
 export type PlayerSession = {
-  id: string; // socket.id
+  id: string;
   name: string;
   roomId: string;
   joinedAt: number;
+  typed: string;
+};
+
+export type RoundState = {
+  id: string;
+  sentence: string;
+  endsAt: number;
 };
 
 type RoomState = {
@@ -12,6 +19,7 @@ type RoomState = {
 
 class GameState {
   private rooms = new Map<string, RoomState>();
+  private rounds = new Map<string, RoundState>();
 
   getOrCreateRoom(roomId: string): RoomState {
     const existing = this.rooms.get(roomId);
@@ -38,6 +46,21 @@ class GameState {
     const room = this.rooms.get(roomId);
     if (!room) return [];
     return Array.from(room.players.values());
+  }
+  setRound(roomId: string, round: RoundState) {
+    this.rounds.set(roomId, round);
+  }
+
+  getRound(roomId: string) {
+    return this.rounds.get(roomId);
+  }
+
+  updateTyped(roomId: string, socketId: string, typed: string) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    const p = room.players.get(socketId);
+    if (!p) return;
+    p.typed = typed;
   }
 }
 

@@ -12,8 +12,15 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [isJoined, setIsJoined] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [sentence, setSentence] = useState("");
+  const [endsAt, setEndsAt] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
+    const onRoundStart = (round: { sentence: string; endsAt: number }) => {
+      setSentence(round.sentence);
+      setEndsAt(round.endsAt);
+    };
     const s = getSocket();
 
     const onPlayers = (data: { players: Player[] }) => setPlayers(data.players);
@@ -30,8 +37,8 @@ export default function HomePage() {
     s.on("server:error", onErr);
     s.on("connect", onConnect);
     s.on("disconnect", onDisconnect);
+    s.on("round:start", onRoundStart);
 
-    // на случай если сокет уже подключен к моменту маунта
     setConnected(s.connected);
 
     return () => {
@@ -39,8 +46,20 @@ export default function HomePage() {
       s.off("server:error", onErr);
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
+      s.off("round:start", onRoundStart);
     };
   }, []);
+
+  useEffect(() => {
+    if (!endsAt) return;
+
+    const t = setInterval(() => {
+      const diff = endsAt - Date.now();
+      setTimeLeft(Math.max(0, Math.ceil(diff / 1000)));
+    }, 200);
+
+    return () => clearInterval(t);
+  }, [endsAt]);
 
   const join = () => {
     setError(null);
@@ -93,6 +112,11 @@ export default function HomePage() {
       </div>
 
       {error && <div className="text-red-600">{error}</div>}
+      <div className="border rounded p-3">
+        <div className="font-semibold mb-2">Current sentence</div>
+        <div className="mb-2">{sentence || "—"}</div>
+        <div className="text-sm opacity-80">Time left: {timeLeft}s</div>
+      </div>
 
       <div className="border rounded p-3">
         <div className="font-semibold mb-2">Players in room</div>
