@@ -6,7 +6,7 @@ import { gameState } from "./game-state";
 import { getRandomSentence } from "./sentences";
 import { computeMetrics } from "./metrics";
 
-const PORT = Number(process.env.SOCKET_PORT ?? 3001);
+const PORT = Number(process.env.PORT ?? process.env.SOCKET_PORT ?? 3001);
 
 const joinSchema = z.object({
   name: z.string().trim().min(1).max(24),
@@ -15,9 +15,11 @@ const joinSchema = z.object({
 
 const httpServer = createServer();
 
+const ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:3000";
+
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000"],
+    origin: ORIGIN.split(",").map((s) => s.trim()),
     methods: ["GET", "POST"],
   },
 });
